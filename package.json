@@ -7,7 +7,7 @@
     "dev:frontend": "npm run dev --prefix frontend",
     "lint": "npm run lint --prefix frontend",
     "build": "npm run build --prefix frontend && npm run prisma:generate --prefix backend",
-    "start": "npm run start --prefix backend",
-    "railway:prepare": "npm run install:all && npm run build && npm run prisma:deploy --prefix backend"
+    "start": "npm run prisma:deploy --prefix backend && npm run start --prefix backend",
+    "railway:prepare": "npm run install:all && npm run build"
   }
 }
