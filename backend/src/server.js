@@ -14,11 +14,7 @@ const taskRoutes = require("./routes/taskRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 
 const app = express();
-const isProduction = process.env.NODE_ENV === "production";
-
-if (isProduction) {
-  app.set("trust proxy", 1);
-}
+app.set("trust proxy", 1);
 
 app.use(helmet());
 app.use(
@@ -44,12 +40,22 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
-const frontendDistPath = path.resolve(__dirname, "../../frontend/dist");
-if (fs.existsSync(frontendDistPath)) {
+const frontendDistCandidates = [
+  path.resolve(__dirname, "../../frontend/dist"),
+  path.resolve(process.cwd(), "frontend/dist"),
+  path.resolve(process.cwd(), "dist"),
+  path.resolve(__dirname, "../public"),
+];
+const frontendDistPath = frontendDistCandidates.find((candidate) => fs.existsSync(candidate));
+
+if (frontendDistPath) {
+  console.log(`Serving frontend from: ${frontendDistPath}`);
   app.use(express.static(frontendDistPath));
   app.get(/^(?!\/api).*/, (req, res) => {
     res.sendFile(path.join(frontendDistPath, "index.html"));
   });
+} else {
+  console.warn("Frontend build not found. / will return 404 until frontend is built.");
 }
 
 app.use((err, req, res, next) => {
