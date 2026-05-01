@@ -45,7 +45,7 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
 const frontendDistPath = path.resolve(__dirname, "../../frontend/dist");
-if (isProduction && fs.existsSync(frontendDistPath)) {
+if (fs.existsSync(frontendDistPath)) {
   app.use(express.static(frontendDistPath));
   app.get(/^(?!\/api).*/, (req, res) => {
     res.sendFile(path.join(frontendDistPath, "index.html"));
