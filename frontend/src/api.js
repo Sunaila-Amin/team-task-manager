@@ -1,9 +1,19 @@
 import axios from "axios";
 
-// Production: same-origin `/api` (Express serves the built SPA). Dev: local backend.
-const baseURL =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV ? "http://localhost:5000/api" : "/api");
+function resolveApiBaseURL() {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (import.meta.env.DEV) {
+    return envUrl || "http://localhost:5000/api";
+  }
+  // Production bundle: never use localhost — Railway often sets VITE_API_URL from
+  // .env.example at build time, which breaks login/signup in the user's browser.
+  if (envUrl && !/localhost|127\.0\.0\.1/i.test(envUrl)) {
+    return envUrl;
+  }
+  return "/api";
+}
+
+const baseURL = resolveApiBaseURL();
 
 const api = axios.create({
   baseURL,
