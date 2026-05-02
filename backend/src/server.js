@@ -16,15 +16,30 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const app = express();
 app.set("trust proxy", 1);
 
-app.use(helmet());
+// Disable default CSP: strict connect-src / related directives can block XHR/fetch to /api
+// from the SPA even on same-origin (browser reports axios "Network Error"; POST never logged).
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
+// JWT is sent in Authorization; cookies not used — mirror Origin without credentials issues.
 app.use(
   cors({
-    origin: process.env.CLIENT_URL ? process.env.CLIENT_URL.split(",") : true,
-    credentials: true,
+    origin: true,
+    credentials: false,
   })
 );
 app.use(morgan("dev"));
 app.use(express.json({ limit: "1mb" }));
+
+app.use((req, res, next) => {
+  if (req.originalUrl.startsWith("/api") && req.method !== "GET" && req.method !== "HEAD") {
+    console.log(`${req.method} ${req.originalUrl}`);
+  }
+  next();
+});
 
 // Before rate limit so deploy health checks stay fast and don't consume the API quota.
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
