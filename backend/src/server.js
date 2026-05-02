@@ -26,15 +26,19 @@ app.use(
 app.use(morgan("dev"));
 app.use(express.json({ limit: "1mb" }));
 
+// Before rate limit so deploy health checks stay fast and don't consume the API quota.
+app.get("/api/health", (req, res) => res.json({ status: "ok" }));
+
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({ message: "Too many requests. Try again in a few minutes." });
+  },
 });
 app.use("/api", apiLimiter);
-
-app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/tasks", taskRoutes);

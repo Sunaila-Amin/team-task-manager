@@ -2,6 +2,21 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import api from "./api";
 
+function apiErrorMessage(err) {
+  const data = err.response?.data;
+  if (typeof data === "string" && data.trim()) return data.trim().slice(0, 300);
+  if (data && typeof data === "object" && data.message != null) return String(data.message);
+  if (err.response?.status === 429) return "Too many requests. Please wait and try again.";
+  if (!err.response) {
+    if (err.code === "ECONNABORTED") return "Request timed out. Please try again.";
+    if (err.message === "Network Error") {
+      return "Cannot reach the server. It may be restarting — wait a moment and try again.";
+    }
+    return err.message || "Connection failed";
+  }
+  return `Server error (${err.response.status})`;
+}
+
 function AuthPage({ onAuth }) {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -19,7 +34,7 @@ function AuthPage({ onAuth }) {
       localStorage.setItem("token", data.token);
       onAuth(data.user);
     } catch (err) {
-      setError(err.response?.data?.message || "Authentication failed");
+      setError(apiErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
