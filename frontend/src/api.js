@@ -5,12 +5,14 @@ function resolveApiBaseURL() {
   if (import.meta.env.DEV) {
     return envUrl || "http://localhost:5000/api";
   }
-  // Production bundle: never use localhost — Railway often sets VITE_API_URL from
-  // .env.example at build time, which breaks login/signup in the user's browser.
-  if (envUrl && !/localhost|127\.0\.0\.1/i.test(envUrl)) {
-    return envUrl;
+  // Production: derive API URL from the page origin so we never call baked-in
+  // localhost, wrong host, or http:// on an https:// page (mixed content → Network Error).
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return `${window.location.origin}/api`;
   }
-  return "/api";
+  const safeEnv =
+    envUrl && !/localhost|127\.0\.0\.1/i.test(envUrl) ? envUrl : null;
+  return safeEnv || "/api";
 }
 
 const baseURL = resolveApiBaseURL();
