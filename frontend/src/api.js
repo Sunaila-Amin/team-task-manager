@@ -2,17 +2,15 @@ import axios from "axios";
 
 function resolveApiBaseURL() {
   const envUrl = import.meta.env.VITE_API_URL;
-  if (import.meta.env.DEV) {
-    return envUrl || "http://localhost:5000/api";
+  // Use PROD (set by vite build), not DEV — misconfigured builders / env can leave
+  // DEV truthy or bake VITE_API_URL=localhost, causing ERR_CONNECTION_REFUSED in prod.
+  if (import.meta.env.PROD) {
+    if (envUrl && !/localhost|127\.0\.0\.1/i.test(envUrl)) {
+      return envUrl.replace(/\/$/, "");
+    }
+    return "/api";
   }
-  // Production: derive API URL from the page origin so we never call baked-in
-  // localhost, wrong host, or http:// on an https:// page (mixed content → Network Error).
-  if (typeof window !== "undefined" && window.location?.origin) {
-    return `${window.location.origin}/api`;
-  }
-  const safeEnv =
-    envUrl && !/localhost|127\.0\.0\.1/i.test(envUrl) ? envUrl : null;
-  return safeEnv || "/api";
+  return envUrl || "http://localhost:5000/api";
 }
 
 const baseURL = resolveApiBaseURL();
